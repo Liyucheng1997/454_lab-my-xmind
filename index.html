@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>思维导图</title>
+<meta name="description" content="在浏览器里创建和编辑思维导图，支持多种主题，可打开 .mindmap / XMind / 百度脑图 / FreeMind / OPML / Markdown 文件。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231d1d1f'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='15' cy='16' r='3.5'/%3E%3Cpath d='M18.5 16h4M12.4 13.6 9.5 10.5M12.4 18.4l-2.9 3.1'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='24.5' cy='16' r='2'/%3E%3Ccircle cx='8.2' cy='9.2' r='2'/%3E%3Ccircle cx='8.2' cy='22.8' r='2'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <header class="titlebar">
+    <button class="logo-mark" id="btnHome" title="主页：新建、打开、最近文件" data-icon="logo" data-size="19"></button>
+    <div class="title-block">
+      <input id="docTitle" class="doc-title" spellcheck="false" maxlength="80" aria-label="导图名称">
+      <span id="saveState" class="save-state"></span>
+    </div>
+    <div class="spacer"></div>
+    <div class="tb-actions">
+      <button class="icon-btn" id="btnUndo" title="撤销 (Ctrl+Z)" data-icon="undo"></button>
+      <button class="icon-btn" id="btnRedo" title="重做 (Ctrl+Y)" data-icon="redo"></button>
+      <span class="tb-sep"></span>
+      <button class="btn btn-sm tb-text" id="btnNew" title="新建导图" data-icon="filePlus" data-size="16"><span>新建</span></button>
+      <button class="btn btn-sm tb-text" id="btnOpen" title="打开文件 (Ctrl+O)" data-icon="folder" data-size="16"><span>打开</span></button>
+      <button class="btn btn-sm tb-text" id="btnExport" title="导出图片、Markdown 或另存为" data-icon="download" data-size="16"><span>导出</span></button>
+      <button class="btn btn-sm btn-primary tb-text" id="btnSave" title="保存 (Ctrl+S)" data-icon="save" data-size="16"><span>保存</span></button>
+      <span class="tb-sep"></span>
+      <button class="icon-btn" id="btnPanel" title="主题与样式" data-icon="palette"></button>
+      <button class="icon-btn" id="btnDark" title="切换深色界面"></button>
+      <button class="icon-btn" id="btnHelp" title="快捷键" data-icon="help"></button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="stage-wrap">
+      <div class="stage" id="stage">
+        <div class="world" id="world">
+          <svg class="links" id="links" width="1" height="1" aria-hidden="true"></svg>
+          <div id="nodes"></div>
+          <div id="folds"></div>
+          <textarea id="ime" class="ime" wrap="off" spellcheck="false" autocomplete="off" aria-label="编辑主题"></textarea>
+        </div>
+      </div>
+      <div class="float-bar" id="floatBar">
+        <button class="fb-btn" id="fbChild" title="添加子主题 (Tab)" data-icon="child" data-size="16"><span>子主题</span></button>
+        <button class="fb-btn" id="fbSibling" title="添加同级主题 (Enter)" data-icon="sibling" data-size="16"><span>同级主题</span></button>
+        <button class="fb-btn" id="fbDelete" title="删除 (Delete)" data-icon="trash" data-size="16"></button>
+        <span class="fb-sep"></span>
+        <button class="fb-btn" id="zoomOut" title="缩小 (Ctrl+-)" data-icon="zoomOut" data-size="16"></button>
+        <button class="fb-zoom tabular" id="zoomLabel" title="还原为 100%">100%</button>
+        <button class="fb-btn" id="zoomIn" title="放大 (Ctrl+=)" data-icon="zoomIn" data-size="16"></button>
+        <button class="fb-btn" id="zoomFit" title="适应窗口 (Ctrl+0)" data-icon="fit" data-size="16"></button>
+      </div>
+      <div class="stage-info" id="stageInfo"></div>
+    </section>
+
+    <aside class="side" id="side">
+      <div class="side-head">
+        <div class="seg" id="sideTabs">
+          <button data-tab="theme" class="active">主题</button>
+          <button data-tab="structure">结构</button>
+          <button data-tab="node">节点</button>
+        </div>
+        <button class="icon-btn side-close" id="sideClose" title="关闭面板" data-icon="x" data-size="16"></button>
+      </div>
+      <div class="side-body" id="sideBody"></div>
+    </aside>
+  </main>
+</div>
+
+<div class="home" id="home" hidden>
+  <div class="home-inner">
+    <div class="home-top">
+      <div class="brand"><span class="logo-mark" data-icon="logo" data-size="19"></span><span>思维导图</span></div>
+      <button class="modal-x" id="homeClose" title="返回编辑 (Esc)" data-icon="x" data-size="16"></button>
+    </div>
+    <div class="home-hero">
+      <div>
+        <h1>开始一张思维导图</h1>
+        <p class="sub">从空白或模板新建，或者打开已有的导图文件。编辑时会自动保存草稿，关掉页面也不会丢。</p>
+      </div>
+      <button class="btn btn-primary btn-lg" id="homeOpen" data-icon="folder" data-size="17"><span>打开文件</span></button>
+    </div>
+    <div class="section-title">新建</div>
+    <div class="tpl-grid" id="tplGrid"></div>
+    <div class="section-title">最近</div>
+    <div class="recent-card" id="recentList"></div>
+    <p class="home-foot">可打开 .mindmap、XMind（.xmind）、百度脑图（.km）、FreeMind（.mm）、OPML 和 Markdown 文件，也可以把文件直接拖进窗口。</p>
+  </div>
+</div>
+
+<div class="drop-overlay" id="dropOverlay" hidden><div class="drop-box" data-icon="folder" data-size="30"><span>松开即可打开文件</span></div></div>
+<div class="toast-host" id="toastHost"></div>
+<input type="file" id="fileInput" hidden accept=".mindmap,.json,.xmind,.km,.mm,.opml,.md,.markdown,.txt">
+
+<script src="js/icons.js"></script>
+<script src="js/themes.js"></script>
+<script src="js/model.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/io.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
